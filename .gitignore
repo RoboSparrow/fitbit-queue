@@ -1,0 +1,16 @@
+node_modules/*
+
+_dev/*
+
+log/*
+!log/.gitkeep
+
+queue/*
+!queue/.gitkeep
+
+sessions/*
+!queue/.gitkeep
+
+queue-test/*
+
+.env.*

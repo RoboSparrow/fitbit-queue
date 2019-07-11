@@ -1,0 +1,46 @@
+// @see https://eslint.org/docs/user-guide/configuring
+{
+    root: true,
+    //parser: 'babel-eslint',
+    parserOptions: {
+        sourceType: 'module'
+    },
+
+    env: {
+        node: true,
+    },
+
+    extends: 'airbnb-base',
+
+    plugins: [
+    ],
+    rules: {
+
+        // custom rules
+
+        'no-console': 'off',
+        'indent': ['warn', 4, {
+            'SwitchCase': 1,
+            'MemberExpression': 0, //multi-line property chains (promises)
+        }],
+        'no-multiple-empty-lines': [
+            "warn", {
+                "max": 2,
+                "maxEOF": 1
+            }
+        ],
+        'comma-dangle': ['warn', 'only-multiline'],
+        'spaced-comment': 'off',
+        'padded-blocks': 'off',
+        'arrow-body-style': 'off',
+        'prefer-template': 'off',
+        'prefer-arrow-callback': 'off',
+        'no-continue': 'off',
+        'object-shorthand': 'off',
+        'no-param-reassign': 'off',
+        'max-len': 'off',
+        'func-names': 'off',
+        'no-underscore-dangle': 'off',
+        'space-before-function-paren': ['warn', 'never'],
+    }
+}

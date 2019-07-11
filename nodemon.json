@@ -1,0 +1,6 @@
+{
+  "watch": ["*.js"],
+  "verbose": false,
+  "ignore": ["**/*.test.js", "**/*.spec.js", ".git", "node_modules", "_dev"],
+  "exec": "./node_modules/.bin/eslint {{pwd}}"
+}
