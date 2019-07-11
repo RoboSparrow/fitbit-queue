@@ -9,7 +9,7 @@ queue/*
 !queue/.gitkeep
 
 sessions/*
-!queue/.gitkeep
+!sessions/.gitkeep
 
 queue-test/*
 
