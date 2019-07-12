@@ -20,7 +20,6 @@ describe('Queue', function() {
             async function() {
                 const apiDir = await queue.init(API);
                 assert(apiDir === path.resolve(APP_QUEUE_DIR, API));
-
                 fs.accessSync(path.resolve(APP_QUEUE_DIR, API), fs.R_OK | fs.W_OK);
             });
     });
@@ -33,7 +32,6 @@ describe('Queue', function() {
 
                 await queue.init(API);
                 const file = await queue.create(API, session_id, { test: 'hello' });
-                assert(file === path.resolve(APP_QUEUE_DIR, API, queue.TASK_PREFIX + session_id));
                 fs.accessSync(file, fs.R_OK | fs.W_OK);
 
                 const contents = fs.readFileSync(file, 'utf8');
@@ -55,7 +53,6 @@ describe('Queue', function() {
 
                 await queue.init(API);
                 const file = await queue.create(API, session_id, { test: 'hello' });
-                assert(file === path.resolve(APP_QUEUE_DIR, API, queue.TASK_PREFIX + session_id));
                 fs.accessSync(file, fs.R_OK | fs.W_OK);
 
                 const obj = await queue.read(file);
@@ -106,8 +103,8 @@ describe('Queue', function() {
 
                 const locked = await queue.lock(file);
                 assert(locked !== file);
-                assert.throws(() => fs.accessSync(file, fs.R_OK), { code: 'ENOENT' });
                 fs.accessSync(locked, fs.R_OK | fs.W_OK);
+                assert.throws(() => fs.accessSync(file, fs.R_OK), { code: 'ENOENT' });
             });
 
         it('doesn\'t lock an alredy locked file',
@@ -349,7 +346,6 @@ describe('Queue', function() {
 
                 await queue.init(API);
                 const file = await queue.create(API, session_id, { test: 'hello' });
-                assert(file === path.resolve(APP_QUEUE_DIR, API, queue.TASK_PREFIX + session_id));
                 fs.accessSync(file, fs.R_OK | fs.W_OK);
 
                 const locked = await queue.lock(file);
@@ -394,6 +390,123 @@ describe('Queue', function() {
                     fs.accessSync(released, fs.R_OK | fs.W_OK);
                 }
             });
+    });
+
+    describe('findNextTask()', function() {
+
+        it('returns NULL if no tasks available',
+            async function() {
+                const api = `findnexttask-${Date.now()}`;
+
+                await queue.init(api);
+                const task = await queue.findNextTask(api);
+                assert(task === null);
+            });
+
+        it('returns first task file',
+            async function() {
+                const code = Date.now();
+                const api = `findnexttask-${Date.now()}`;
+                const session_id = `session-${code}`;
+
+                await queue.init(api);
+                const file1 = await queue.create(api, session_id, code);
+                await sleep(50);
+                const file2 = await queue.create(api, session_id, code);
+
+                const task = await queue.findNextTask(api);
+                assert(file1 !== file2);
+                assert(task === file1);
+            });
+
+    });
+
+    describe('findTasks()', function() {
+
+        it('returns an empty array if no tasks available',
+            async function() {
+                const api = `findtasks-${Date.now()}`;
+
+                await queue.init(api);
+                const tasks = await queue.findTasks(api);
+                assert(Array.isArray(tasks));
+                assert(tasks.length === 0);
+            });
+
+        it('returns an array task file',
+            async function() {
+                const code = Date.now();
+                const api = `findtask-${Date.now()}`;
+                const session_id = `session-${code}`;
+
+                await queue.init(api);
+                const file1 = await queue.create(api, session_id, code);
+                await sleep(50);
+                const file2 = await queue.create(api, session_id, code);
+
+                const tasks = await queue.findTasks(api);
+                assert(Array.isArray(tasks));
+                assert(tasks.length === 2);
+                assert(tasks[0] === file1);
+                assert(tasks[1] === file2);
+            });
+
+    });
+
+    describe('watch()', function() {
+
+        it('triggers callbacks on file creation',
+            async function() {
+                const code = Date.now();
+                const api = `watchtasks-${Date.now()}`;
+                const session_id = `session-${code}`;
+
+                const expected = [];
+                const files_created = [];
+                const files_removed = [];
+                const triggered_apis = [];
+
+                await queue.init(api);
+
+                const { TASK_CREATED, TASK_REMOVED } = queue;
+                const watcher = await queue.watch(api, (file, mode, _api) => {
+
+                    if (mode === TASK_CREATED) {
+                        files_created.push(file);
+                    }
+                    if (mode === TASK_REMOVED) {
+                        files_removed.push(file);
+                    }
+                    triggered_apis.push(_api);
+
+                });
+
+                expected[0] = await queue.create(api, session_id, code);
+                await sleep(50);
+                expected[1] = await queue.create(api, session_id, code);
+                await sleep(50);
+
+                await queue.lock(expected[0]);
+                await sleep(50);
+                await queue.lock(expected[1]);
+                await sleep(50);
+
+                assert(files_created.length === expected.length);
+                assert(files_removed.length === expected.length);
+                assert(triggered_apis.length === expected.length * 2);
+
+                expected.forEach((file, index) => {
+                    assert(file === files_created[index]);
+                    assert(file === files_removed[index]);
+                });
+
+                triggered_apis.forEach((entry) => {
+                    assert(entry === api);
+                });
+
+                watcher.close();
+            });
+
     });
 
 });

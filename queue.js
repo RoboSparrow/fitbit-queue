@@ -35,37 +35,40 @@ require('./config');
 const log = require('./log');
 
 const { APP_QUEUE_DIR } = process.env;
-const LOCK_PREFIX = 'locked';
-const RELEASE_PREFIX = 'released';
-const TASK_PREFIX = 'tasks';
+const EXT_LOCKED = 'locked';
+const EXT_RELEASED = 'released';
+const EXT_TASK = 'tasks';
+
+const TASK_CREATED = 'created';
+const TASK_REMOVED = 'removed';
 
 const isLocked = function(filename) {
     const dir = path.basename(path.dirname(filename));
-    return dir === LOCK_PREFIX;
+    return dir === EXT_LOCKED;
 };
 
 const isReleased = function(filename) {
     const dir = path.basename(path.dirname(filename));
-    return dir === RELEASE_PREFIX;
+    return dir === EXT_RELEASED;
 };
 
 const isTask = function(filename) {
     const dir = path.basename(path.dirname(filename));
-    return dir === TASK_PREFIX;
+    return dir === EXT_TASK;
 };
 
 const init = function(api) {
     const apiDir = path.resolve(APP_QUEUE_DIR, api);
 
-    return mkDirAsync(apiDir + '/' + TASK_PREFIX, { recursive: true })
-    .then(() => mkDirAsync(apiDir + '/' + LOCK_PREFIX, { recursive: true }))
-    .then(() => mkDirAsync(apiDir + '/' + RELEASE_PREFIX, { recursive: true }))
+    return mkDirAsync(apiDir + '/' + EXT_TASK, { recursive: true })
+    .then(() => mkDirAsync(apiDir + '/' + EXT_LOCKED, { recursive: true }))
+    .then(() => mkDirAsync(apiDir + '/' + EXT_RELEASED, { recursive: true }))
     .then(() => apiDir);
 };
 
 const create = function(api, session_id, jsondata) {
     const filename = `${Date.now()}.${session_id}`;
-    const file = path.resolve(APP_QUEUE_DIR, api, TASK_PREFIX, filename);
+    const file = path.resolve(APP_QUEUE_DIR, api, EXT_TASK, filename);
     const now = new Date().toISOString();
 
     const data = Object.assign({
@@ -111,7 +114,7 @@ const lock = function(file) {
         return Promise.resolve(file);
     }
 
-    const newFile = file.replace(`${TASK_PREFIX}/`, `${LOCK_PREFIX}/`);
+    const newFile = file.replace(`${EXT_TASK}/`, `${EXT_LOCKED}/`);
     return renameAsync(file, newFile)
     .then(() => newFile);
 };
@@ -122,7 +125,7 @@ const unlock = function(file) {
         return Promise.resolve(file);
     }
 
-    const newFile = file.replace(`${LOCK_PREFIX}/`, `${TASK_PREFIX}/`);
+    const newFile = file.replace(`${EXT_LOCKED}/`, `${EXT_TASK}/`);
     return renameAsync(file, newFile)
     .then(() => newFile);
 };
@@ -132,7 +135,7 @@ const release = function(file) {
         return Promise.reject(new Error(`Trying to release an an unlocked file: ${file}!`));
     }
 
-    const newFile = file.replace(`${LOCK_PREFIX}/`, `${RELEASE_PREFIX}/`);
+    const newFile = file.replace(`${EXT_LOCKED}/`, `${EXT_RELEASED}/`);
     return renameAsync(file, newFile)
     .then(() => newFile);
 };
@@ -146,51 +149,43 @@ const remove = function(file) {
 };
 
 const findTasks = function(api) {
-    const apiDir = path.resolve(APP_QUEUE_DIR, api, TASK_PREFIX);
+    const apiDir = path.resolve(APP_QUEUE_DIR, api, EXT_TASK);
     return readdirAsync(apiDir)
     .then(files => files.map(file => `${apiDir}/${file}`));
 };
 
 const findNextTask = function(api) {
-    const apiDir = path.resolve(APP_QUEUE_DIR, api, TASK_PREFIX);
+    const apiDir = path.resolve(APP_QUEUE_DIR, api, EXT_TASK);
     return readdirAsync(apiDir)
     .then((files) => {
         return (files.length) ? `${apiDir}/${files[0]}` : null;
     });
 };
 
-const EVENT_TRIGGER = 'rename';
+const FSWATCH_EVENT = 'rename';
 const watch = function(api, callback) {
 
-    const apiDir = path.resolve(APP_QUEUE_DIR, api, TASK_PREFIX);
+    const taskDir = path.resolve(APP_QUEUE_DIR, api, EXT_TASK);
 
     return Promise.resolve(
-        fs.watch(apiDir, (eventType, filename) => {
+        fs.watch(taskDir, (eventType, filename) => {
 
             if (!filename) {
                 log.warn('filename not provided');
                 return;
             }
 
-            if (eventType !== EVENT_TRIGGER) {
+            if (eventType !== FSWATCH_EVENT) {
                 return;
             }
 
-            const filePath = `${apiDir}/${filename}`;
-            if (!isTask(filePath)) {
-                return;
-            }
-
-            console.log(`${EVENT_TRIGGER}: ${filename}`);
+            const filePath = `${taskDir}/${filename}`;
             fs.access(filePath, fs.F_OK, function(err) {
-                if(err) {
-                    return; // file was removed
-                }
-
+                const mode = (err) ? TASK_REMOVED : TASK_CREATED;
                 try {
-                    callback(filePath, api);
+                    callback(filePath, mode, api);
                 } catch (e) {
-                    console.error(e);
+                    log.error(e.toString());
                 }
             });
 
@@ -200,9 +195,12 @@ const watch = function(api, callback) {
 
 module.exports = {
     // for tests
-    LOCK_PREFIX,
-    RELEASE_PREFIX,
-    TASK_PREFIX,
+    EXT_LOCKED,
+    EXT_RELEASED,
+    EXT_TASK,
+
+    TASK_CREATED,
+    TASK_REMOVED,
 
     init,
     create,
