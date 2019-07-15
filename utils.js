@@ -23,7 +23,10 @@ const serializeUriParams = function(params) {
     return uri;
 };
 
+const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
+
 module.exports = {
     parseJwtToken,
     serializeUriParams,
+    sleep,
 };

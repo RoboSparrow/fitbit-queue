@@ -2,13 +2,34 @@ const path = require('path');
 const { createLogger, format, transports } = require('winston');
 const DailyRotateFile = require('winston-daily-rotate-file');
 
-const { combine, printf, label } = format;
-let logDir = path.resolve('log');
+require('./config');
 
-const customFormat = printf(({ level, message }) => {
-    const timestamp = new Date().toISOString();
-    return `${timestamp} ${level}: ${message}`;
-});
+const {
+    errors,
+    colorize,
+    printf,
+    timestamp,
+} = format;
+
+const {
+    APP_LOG_DIR,
+    APP_LOG_LEVEL,
+} = process.env;
+
+let logDir = path.resolve(APP_LOG_DIR);
+
+const defaultFormat = format.combine(
+    timestamp(),
+    errors({ stack: true }),
+    printf(info => `(pid: ${process.pid}) ${info.timestamp} ${info.level}: ${info.message} ${info.stack || ''}`)
+);
+
+const consoleFormat = format.combine(
+    colorize(),
+    timestamp(),
+    errors({ stack: true }),
+    printf(info => `(pid: ${process.pid}) ${info.timestamp} ${info.level}: ${info.message} ${info.stack || ''}`)
+);
 
 const init = function(logdir = '') {
 
@@ -17,11 +38,8 @@ const init = function(logdir = '') {
     }
 
     const logger = createLogger({
-        level: 'info',
-        format: combine(
-            label(`(pid: ${process.pid})`),
-            customFormat
-        ),
+        level: APP_LOG_LEVEL || 'info',
+        format: defaultFormat,
         transports: [
             new DailyRotateFile({
                 filename: path.resolve(`${logDir}/%DATE%.app.log`),
@@ -35,7 +53,7 @@ const init = function(logdir = '') {
 
     if (process.env.NODE_ENV !== 'production') {
         logger.add(new transports.Console({
-            format: format.simple()
+            format: consoleFormat,
         }));
     }
 

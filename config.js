@@ -9,12 +9,10 @@ try {
     fs.accessSync(`.env.${process.env.NODE_ENV}`, fs.R_OK);
     const envConfig = dotenv.parse(fs.readFileSync(`.env.${process.env.NODE_ENV}`));
     Object.keys(envConfig).forEach((key) => {
-        console.log(key);
         if (key.substring(0, 4) === 'APP_') {
             process.env[key] = envConfig[key];
         }
     });
-
 } catch (err) {
     //nothing
 }

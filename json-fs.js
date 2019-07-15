@@ -10,10 +10,11 @@ const mkDirRecursive = function(dirpath) {
     return mkDirAsync(dirpath, { recursive: true });
 };
 
-const save = function(dirpath, fileName, data) {
+const save = function(filepath, data) {
+    const dir = path.dirname(filepath);
     const json = JSON.stringify(data, null, 4);
-    return mkDirRecursive(dirpath)
-    .then(() => writeFileAsync(path.resolve(dirpath, fileName), json))
+    return mkDirRecursive(dir)
+    .then(() => writeFileAsync(filepath, json))
     .then(() => data);
 };
 
