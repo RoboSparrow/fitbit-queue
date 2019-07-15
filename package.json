@@ -5,7 +5,8 @@
     "main": "fitbit-api-client.js",
     "scripts": {
         "dev": "NODE_ENV=development nodemon",
-        "test": "NODE_ENV=test mocha test/*.test.js"
+        "test": "NODE_ENV=test node ./bootstrap && NODE_ENV=test mocha test/*.test.js",
+        "start": "NODE_ENV=development node ./bootstrap && xterm -hold -e \"NODE_ENV=development node ./server\" & NODE_ENV=development node ./queue-worker"
     },
     "dependencies": {
         "dotenv": "^8.0.0",
