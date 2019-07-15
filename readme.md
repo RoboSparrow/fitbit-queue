@@ -16,19 +16,22 @@ test:
  * rename `env.development.template` to `.env` and customise configuration
  * `npm run test`
 
-setting up express proxy with lighttpd.conf
+Example of setting up the Express proxy with lighttpd.conf
 
-```conf
+```perl
+# Given that APP_PROXY_PORT is set to 9009 for production..
+
 server.modules += (
     "mod_proxy"
 )
 
-# $SERVER["socket"] == ":80" {
+$SERVER["socket"] == ":80" {
+    # ...
     $HTTP["url"] =~ "^/modules" {
         proxy.server = ( "" => ( ( "host" => "127.0.0.1", "port" => "9009" ) ) )
         proxy.header = ( "upgrade" => "enable" )
-    }
-# }
+    # ...
+}
 ```
 
 WIP, thus not licensed yet
