@@ -16,5 +16,19 @@ test:
  * rename `env.development.template` to `.env` and customise configuration
  * `npm run test`
 
+setting up express proxy with lighttpd.conf
+
+```conf
+server.modules += (
+    "mod_proxy"
+)
+
+# $SERVER["socket"] == ":80" {
+    $HTTP["url"] =~ "^/modules" {
+        proxy.server = ( "" => ( ( "host" => "127.0.0.1", "port" => "9009" ) ) )
+        proxy.header = ( "upgrade" => "enable" )
+    }
+# }
+```
 
 WIP, thus not licensed yet
