@@ -2,15 +2,9 @@ node_modules/*
 
 _dev/*
 
-log/*
-!log/.gitkeep
+data-*
 
-queue/*
-!queue/.gitkeep
-
-sessions/*
-!sessions/.gitkeep
-
-queue-test/*
-
+.env
 .env.*
+!.env.template
+!.env.*.template
