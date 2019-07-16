@@ -4,6 +4,9 @@ _dev/*
 
 data-*
 
+log/*
+queue/*
+
 .env
 .env.*
 !.env.template
