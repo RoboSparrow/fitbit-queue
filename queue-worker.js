@@ -36,6 +36,13 @@ const yyyymmdd = function(date) {
     return `${yyyy}-${mm}-${dd}`;
 };
 
+const getSessionDir = function(session_id) {
+    return [
+        SESSION_DIR_PATH,
+        session_id.substr(0, 4),
+    ].join('/');
+};
+
 /**
  * fetch data,
  * store data
@@ -45,13 +52,13 @@ const yyyymmdd = function(date) {
 const getSleepList = function(session_id, access_token, yyyyMMdd, next_uri = '', files_written = []) {
     const limit = SLEEPLIST_API_LIMIT;
     // @see session.c: create_session() > char* session_prefix
-    let sessionDir = `${SESSION_DIR_PATH}/${session_id.substr(0, 4)}`;
+    let sessionDir = getSessionDir(session_id);
 
     // offest param not supported but required!
     // @see https://dev.fitbit.com/build/reference/web-api/sleep/#get-sleep-logs-list
     const uri = next_uri || `https://api.fitbit.com/1.2/user/-/sleep/list.json?beforeDate=${yyyyMMdd}&sort=desc&offset=0&limit=${limit}`;
     const count = files_written.length;
-    const targetFile = `${sessionDir}/${API}.sleeplist.${count}.json`;
+    const targetFile = `${sessionDir}/${session_id}.${API}.sleeplist.${count}.json`;
 
     log.debug(`[${session_id}] getSleepList(${count}): ${uri}`);
 
