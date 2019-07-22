@@ -91,7 +91,7 @@ app.get('/modules/fibit/login', (req, res, next) => {
         redirect_uri: APP_FITBIT_REDIRECTURI,
         state,
     });
-
+    log.debug(`redirect to: ${uri}`);
     res.redirect(uri);
     next();
 });
