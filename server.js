@@ -27,7 +27,7 @@ const express = require('express');
 const fetch = require('node-fetch');
 
 require('./config');
-const log = require('./log');
+const Logger = require('./log');
 const queue = require('./queue');
 const { serializeUriParams } = require('./utils');
 
@@ -42,6 +42,10 @@ const {
     APP_FITBIT_REDIRECTURI,
 } = process.env;
 
+// init log
+const log = Logger.init('express-server');
+
+// setup express vars
 const API = 'fitbit';
 
 const args = process.argv.slice(2);
@@ -49,8 +53,8 @@ let customPort = NaN;
 if (args.length) {
     customPort = parseInt(args[0], 10);
 }
-
 const port = (!Number.isNaN(customPort) && customPort) ? customPort : APP_PROXY_PORT;
+
 const app = express();
 
 ////
@@ -75,13 +79,7 @@ app.get('/modules', (req, res, next) => {
  * @see https://dev.fitbit.com/build/reference/web-api/oauth2/#authorization-page
  */
 app.get('/modules/fibit/login', (req, res, next) => {
-    let { session_id } = req.query;
-
-    /// DEV
-    if (typeof session_id === 'undefined') {
-        session_id = Date.now();
-    }
-    /// end DEV
+    const { state } = req.query;
 
     // https://dev.fitbit.com/build/reference/web-api/oauth2/#authorization-page
     let uri = 'https://www.fitbit.com/oauth2/authorize?';
@@ -91,7 +89,7 @@ app.get('/modules/fibit/login', (req, res, next) => {
         response_type: 'code',
         scope: 'heartrate profile sleep',
         redirect_uri: APP_FITBIT_REDIRECTURI,
-        state: session_id,
+        state,
     });
 
     res.redirect(uri);
@@ -103,7 +101,8 @@ app.get('/modules/fibit/login', (req, res, next) => {
 // on creation of the queue file the watch script should be triggered an deal with the data crawling
 // @see https://dev.fitbit.com/build/reference/web-api/oauth2/#access-token-request
 app.get('/modules/fitbit/callback', (req, res, next) => {
-    const { code, state } = req.query; // state === session_id
+    const { code, state } = req.query;
+    const { session_id, href } = JSON.parse(state);
     const auth = Buffer.from(`${APP_FITBIT_CLIENTID}:${APP_FITBIT_CLIENTSECRET}`).toString('base64');
 
     const payload = {
@@ -111,11 +110,9 @@ app.get('/modules/fitbit/callback', (req, res, next) => {
         grant_type: 'authorization_code',
         client_id: APP_FITBIT_CLIENTID,
         redirect_uri: APP_FITBIT_REDIRECTURI,
-        state, // session_id
+        state,
         expires_in: 28800
     };
-
-    let cached = null;
 
     fetch('https://api.fitbit.com/oauth2/token', {
         method: 'post',
@@ -128,14 +125,43 @@ app.get('/modules/fitbit/callback', (req, res, next) => {
     })
     .then(response => response.json())
     .then((data) => {
-        cached = Object.assign({
-            session_id: state,
+        const queueData = Object.assign({
+            session_id,
+            href,
         }, data);
-
-        return queue.create(API, state, data);
+        return queue.create(API, session_id, queueData);
     })
-    .then(() => { // DEV
-        res.json(cached);
+    .then(() => {
+        // redirect to app
+        res.send(`
+            <!doctype html>
+                <html lang="en">
+                <head>
+                    <meta charset="utf-8">
+                    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+                    <title>(${API}) Thank you!</title>
+                    <meta name="description" content="(${API}) Thank you!">
+
+                    <link rel="stylesheet"
+                        href="https://stackpath.bootstrapcdn.com/bootstrap/3.4.1/css/bootstrap.min.css"
+                        integrity="sha384-HSMxcRTRxnN+Bdg0JdbxYKrThecOKuH5zCYotlSAcp1+c8xmyTe9GYg1l9a69psu"
+                        crossorigin="anonymous">
+                </head>
+                <body>
+                    <div class="container">
+                        <div class="row">
+                            <div class="col">
+                                <h1>Thank you</h1>
+                                <p>Your <strong>${API}</strong> data will be included in our survey.</p>
+                                <a class="btn btn-primary btn-lg" href="${href}">Return to Survey</a>
+                            </div>
+                        </div>
+                    </div>
+                </body>
+            </html>
+        `.trim());
+        //  res.redirect(href);
         next();
     })
     .catch((err) => {

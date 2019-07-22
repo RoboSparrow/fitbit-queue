@@ -135,12 +135,15 @@ console.log(`${li} set ownership ${owner} to log queue session directories`);
 
 cmd(`sudo mkdir -p ${vars.LogDir}`);
 cmd(`sudo chown -R ${owner} ${vars.LogDir}`);
+cmd(`sudo chmod -R 755 ${vars.LogDir}`);
 
 cmd(`sudo mkdir -p ${vars.QueueDir}`);
 cmd(`sudo chown -R ${owner} ${vars.QueueDir}`);
+cmd(`sudo chmod -R 755 ${vars.QueueDir}`);
 
 cmd(`sudo mkdir -p ${vars.SessionDir}`);
 cmd(`sudo chown -R ${owner} ${vars.SessionDir}`);
+cmd(`sudo chmod -R 755 ${vars.SessionDir}`);
 
 console.log(`${li} writing unit file to: ${serviceLocation}`);
 fs.writeFileSync(serviceLocation, serviceFileContent, 'utf8');
@@ -149,7 +152,7 @@ console.log(`${li} Enable service: ${service}`);
 cmd(`sudo systemctl enable ${service}`);
 
 console.log(`${li} Start service: ${service}`);
-cmd(`sudo systemctl start ${service}`);
+cmd(`sudo systemctl reload-or-restart ${service}`);
 
 console.log(`${li} Status of service: ${service}`);
 const ret = cmd(`sudo systemctl status ${service}`);
@@ -170,5 +173,5 @@ console.log(`${li} unit-file: /etc/systemd/system/${service}`);
 console.log(`${li} stop: sudo systemctl stop ${service}`);
 console.log(`${li} start: sudo systemctl start ${service}`);
 console.log(`${li} restart: sudo systemctl restart ${service}`);
-console.log(`${li} journalctl: sudo journalctl -u ${service}`);
+console.log(`${li} journalctl: sudo journalctl -n -u ${service}`);
 console.log(`${li} logs: cat /var/log/syslog | grep ss-`);

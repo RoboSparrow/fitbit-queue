@@ -1,4 +1,6 @@
+/* eslint-disable no-bitwise */
 const path = require('path');
+const fs = require('fs');
 const { createLogger, format, transports } = require('winston');
 const DailyRotateFile = require('winston-daily-rotate-file');
 
@@ -9,6 +11,7 @@ const {
     colorize,
     printf,
     timestamp,
+    label,
 } = format;
 
 const {
@@ -16,33 +19,37 @@ const {
     APP_LOG_LEVEL,
 } = process.env;
 
-let logDir = path.resolve(APP_LOG_DIR);
+const defaultFormat = function(labelText = '') {
+    return format.combine(
+        timestamp(),
+        errors({ stack: true }),
+        label({ label: labelText }),
+        printf(info => `(pid: ${process.pid}) ${info.timestamp} ${info.label}  ${info.level}: ${info.message} ${info.stack || ''}`)
+    );
+};
 
-const defaultFormat = format.combine(
-    timestamp(),
-    errors({ stack: true }),
-    printf(info => `(pid: ${process.pid}) ${info.timestamp} ${info.level}: ${info.message} ${info.stack || ''}`)
-);
+const consoleFormat = function(labelText = '') {
+    return format.combine(
+        colorize(),
+        timestamp(),
+        errors({ stack: true }),
+        label({ label: labelText }),
+        printf(info => `(pid: ${process.pid}) ${info.timestamp} ${info.label} ${info.level}: ${info.message} ${info.stack || ''}`)
+    );
+};
 
-const consoleFormat = format.combine(
-    colorize(),
-    timestamp(),
-    errors({ stack: true }),
-    printf(info => `(pid: ${process.pid}) ${info.timestamp} ${info.level}: ${info.message} ${info.stack || ''}`)
-);
+const init = function(labelText = '', logDir = '') {
+    const dir = logDir || APP_LOG_DIR;
 
-const init = function(logdir = '') {
-
-    if (logdir) {
-        logDir = path.resolve(logdir);
-    }
+    // test access or thow exception
+    fs.accessSync(dir, fs.W_OK | fs.R_OK | fs.X_OK);
 
     const logger = createLogger({
         level: APP_LOG_LEVEL || 'info',
-        format: defaultFormat,
+        format: defaultFormat(labelText),
         transports: [
             new DailyRotateFile({
-                filename: path.resolve(`${logDir}/%DATE%.app.log`),
+                filename: path.resolve(`${dir}/%DATE%.app.log`),
                 datePattern: 'YYYY-MM-DD-HH',
                 zippedArchive: true,
                 maxSize: '20m',
@@ -53,13 +60,15 @@ const init = function(logdir = '') {
 
     if (process.env.NODE_ENV !== 'production') {
         logger.add(new transports.Console({
-            format: consoleFormat,
+            format: consoleFormat(labelText),
         }));
     }
+
+    logger.debug('initialized log');
 
     return logger;
 };
 
-const log = init();
-
-module.exports = log;
+module.exports = {
+    init,
+};

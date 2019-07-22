@@ -3,7 +3,7 @@ const path = require('path');
 const fetch = require('node-fetch');
 
 require('./config');
-const log = require('./log');
+const Logger = require('./log');
 const queue = require('./queue');
 const jsonfs = require('./json-fs');
 const { serializeUriParams, sleep } = require('./utils');
@@ -16,6 +16,10 @@ const {
 } = process.env;
 const API = 'fitbit';
 
+// init log
+const log = Logger.init(`queue-${API}`);
+
+// queue vars
 const SESSION_DIR_PATH = path.resolve(APP_SESSION_DIR);
 const SLEEPLIST_API_DAY_PERIOD = 100; // days back to fetch
 const SLEEPLIST_API_LIMIT = 100;
@@ -40,13 +44,14 @@ const yyyymmdd = function(date) {
  */
 const getSleepList = function(session_id, access_token, yyyyMMdd, next_uri = '', files_written = []) {
     const limit = SLEEPLIST_API_LIMIT;
-    const sessionDir = `${SESSION_DIR_PATH}/${session_id}`;
+    // @see session.c: create_session() > char* session_prefix
+    let sessionDir = `${SESSION_DIR_PATH}/${session_id.substr(0, 4)}`;
 
     // offest param not supported but required!
     // @see https://dev.fitbit.com/build/reference/web-api/sleep/#get-sleep-logs-list
     const uri = next_uri || `https://api.fitbit.com/1.2/user/-/sleep/list.json?beforeDate=${yyyyMMdd}&sort=desc&offset=0&limit=${limit}`;
     const count = files_written.length;
-    const targetFile = `${sessionDir}/sleeplist.${count}.json`;
+    const targetFile = `${sessionDir}/${API}.sleeplist.${count}.json`;
 
     log.debug(`[${session_id}] getSleepList(${count}): ${uri}`);
 
@@ -156,7 +161,6 @@ const runSleepTask = function(taskFile, api) {
     //    return queue.unlock(lockedFile);
     //})
     .then((data) => {
-        task = data;
         log.info(JSON.stringify(data, null, 4));
         return queue.release(lockedFile);
     })

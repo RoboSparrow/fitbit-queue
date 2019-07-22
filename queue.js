@@ -32,7 +32,7 @@ const readdirAsync = promisify(fs.readdir);
 const readFileAsync = promisify(fs.readFile);
 
 require('./config');
-const log = require('./log');
+const Logger = require('./log');
 
 const { APP_QUEUE_DIR } = process.env;
 const EXT_LOCKED = 'locked';
@@ -41,6 +41,8 @@ const EXT_TASK = 'tasks';
 
 const TASK_CREATED = 'created';
 const TASK_REMOVED = 'removed';
+
+const log = Logger.init('queue');
 
 const isLocked = function(filename) {
     const dir = path.basename(path.dirname(filename));
