@@ -1,12 +1,14 @@
 [Unit]
 Description=SS Server
+After=network.target
 
 [Service]
 ExecStart=/usr/bin/node ${WorkingDirectory}/server.js
+Type=simple
 
 # Required on some systems
 WorkingDirectory=${WorkingDirectory}
-Restart=always
+Restart=on-failure
 
 # Restart service after 10 seconds if node service crashes
 RestartSec=10
