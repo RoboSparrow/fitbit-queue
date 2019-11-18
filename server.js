@@ -56,6 +56,9 @@ if (args.length) {
 const port = (!Number.isNaN(customPort) && customPort) ? customPort : APP_PROXY_PORT;
 
 const app = express();
+app.set('view engine', 'ejs');
+app.use(express.static(__dirname + '/views'));
+app.use(express.static(__dirname + '/views/assets'))
 
 ////
 // routing
@@ -63,6 +66,11 @@ const app = express();
 
 // redirect the user to the Fitbit authorization page
 app.get('/', (req, res, next) => {
+            res.render('thank-you', {
+            API: 'test',
+            href: '/modules/fibit/login',
+        });
+        return
     log.debug('redirect from /');
     res.redirect('/modules/fibit/login');
     next();
@@ -132,35 +140,11 @@ app.get('/modules/fitbit/callback', (req, res, next) => {
         return queue.create(API, session_id, queueData);
     })
     .then(() => {
+        res.render('thank-you', {
+            API,
+            href,
+        });
         // redirect to app
-        res.send(`
-            <!doctype html>
-                <html lang="en">
-                <head>
-                    <meta charset="utf-8">
-                    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-
-                    <title>(${API}) Thank you!</title>
-                    <meta name="description" content="(${API}) Thank you!">
-
-                    <link rel="stylesheet"
-                        href="https://stackpath.bootstrapcdn.com/bootstrap/3.4.1/css/bootstrap.min.css"
-                        integrity="sha384-HSMxcRTRxnN+Bdg0JdbxYKrThecOKuH5zCYotlSAcp1+c8xmyTe9GYg1l9a69psu"
-                        crossorigin="anonymous">
-                </head>
-                <body>
-                    <div class="container">
-                        <div class="row">
-                            <div class="col">
-                                <h1>Thank you</h1>
-                                <p>Your <strong>${API}</strong> data will be included in our survey.</p>
-                                <a class="btn btn-primary btn-lg" href="${href}">Return to Survey</a>
-                            </div>
-                        </div>
-                    </div>
-                </body>
-            </html>
-        `.trim());
         //  res.redirect(href);
         next();
     })
