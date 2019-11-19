@@ -1,13 +1,20 @@
 node_modules/*
 
+# development
 _dev/*
-
 data-*
 
+# logs, queue
 log/*
 queue/*
 
+# configuration
 .env
 .env.*
 !.env.template
 !.env.*.template
+
+# template themes
+views/*
+!views/.gitkeep
+!views/default
