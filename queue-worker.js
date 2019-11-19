@@ -52,7 +52,7 @@ const getSessionDir = function(session_id) {
 const getSleepList = function(session_id, access_token, yyyyMMdd, next_uri = '', files_written = []) {
     const limit = SLEEPLIST_API_LIMIT;
     // @see session.c: create_session() > char* session_prefix
-    let sessionDir = getSessionDir(session_id);
+    const sessionDir = getSessionDir(session_id);
 
     // offest param not supported but required!
     // @see https://dev.fitbit.com/build/reference/web-api/sleep/#get-sleep-logs-list
