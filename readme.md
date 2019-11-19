@@ -1,4 +1,6 @@
 
+# Surveysystem FITBIT modules
+
 * Simple file queue for fetching sleep data from [Fitbit Web Api](https://dev.fitbit.com/build/reference/web-api)
 
 production:
@@ -16,7 +18,7 @@ test:
  * rename `env.development.template` to `.env` and customise configuration
  * `npm run test`
 
-Example of setting up the Express proxy with lighttpd.conf
+Example of setting up the Express proxy in `lighttpd.conf`
 
 ```perl
 # Given that APP_PROXY_PORT is set to 9009 for production..
@@ -33,5 +35,11 @@ $SERVER["socket"] == ":80" {
     # ...
 }
 ```
+
+## Custom HTML Theme.
+
+Copy `./views/default` folder (containing templates and assets) to your chosen theme name and set `APP_VIEWS_DIR=<PATH_TO_MY_THEME>` in your local `.env`
+
+---
 
 WIP, thus not licensed yet
