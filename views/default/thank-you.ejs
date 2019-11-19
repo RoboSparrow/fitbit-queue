@@ -1,0 +1,33 @@
+<!doctype html>
+    <html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+        <meta name="description" content="Oauth login response page for survey applications authored by the Hitchhiker's Guide to the Galaxy">
+        <meta name="author" content="Hitchhiker's Guide to the Galaxy">
+        <title> <%= API %> | Survey Modules | Hitchhiker's Guide to the Galaxy</title>
+        <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+        <link href="/assets/main.css" rel="stylesheet">
+    </head>
+
+    <body class="text-center">
+        <div class="theme-header d-flex flex-row w-100">
+            <div class="cover-container d-flex w-100 h-100 p-3 mx-auto flex-column">
+            <header class="masthead mb-auto">
+                <div class="inner">
+                <h3 class="masthead-brand text-center" style="width: 100%">Hitchhiker's Survey to the Galaxy</h3>
+                </div>
+            </header>
+            </div>
+        </div>
+        <div class="theme-body d-flex flex-row w-100">
+            <div class="cover-container d-flex w-100 h-100 p-4 mx-auto flex-column">
+                <p class="pt-4">
+                    Your <strong><%= API %></strong> data will be included in our survey.
+                </p>
+                <p class="pt-4 pb-4">
+                <a class="btn btn-primary btn-lg" href="<%= href %>">Return to Survey</a>
+            </div>
+        </div>
+    </body>
+</html>
