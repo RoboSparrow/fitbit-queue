@@ -22,7 +22,7 @@
  * https://api.fitbit.com/1.2/user/[user-id]/sleep/date/[startDate; yyyy-MM-dd]/[endDate: yyyy-MM-dd].json
  * https://aaronparecki.com/oauth-2-simplified/#web-server-apps
  */
-
+const path = require('path');
 const express = require('express');
 const fetch = require('node-fetch');
 
@@ -40,6 +40,7 @@ const {
     APP_FITBIT_CLIENTID,
     APP_FITBIT_CLIENTSECRET,
     APP_FITBIT_REDIRECTURI,
+    APP_VIEWS_DIR,
 } = process.env;
 
 // init log
@@ -55,10 +56,11 @@ if (args.length) {
 }
 const port = (!Number.isNaN(customPort) && customPort) ? customPort : APP_PROXY_PORT;
 
+// setup views and static file server
 const app = express();
 app.set('view engine', 'ejs');
-app.use(express.static(__dirname + '/views'));
-app.use(express.static(__dirname + '/views/assets'))
+app.set('views', path.resolve(APP_VIEWS_DIR));
+app.use(express.static(path.resolve(APP_VIEWS_DIR)));
 
 ////
 // routing
@@ -66,11 +68,14 @@ app.use(express.static(__dirname + '/views/assets'))
 
 // redirect the user to the Fitbit authorization page
 app.get('/', (req, res, next) => {
-            res.render('thank-you', {
-            API: 'test',
-            href: '/modules/fibit/login',
-        });
-        return
+    /* DEV
+    res.render('thank-you', {
+        API: 'test',
+        href: '/modules/fibit/login',
+    });
+    return;
+    */
+
     log.debug('redirect from /');
     res.redirect('/modules/fibit/login');
     next();
